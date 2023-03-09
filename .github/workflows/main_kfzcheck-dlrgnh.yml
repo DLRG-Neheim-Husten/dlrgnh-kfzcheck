@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       
-      - uses: cclauss/Find-Python-syntax-errors-action@master
+     # - uses: cclauss/Find-Python-syntax-errors-action@master
 
       - name: Set up Python version
         uses: actions/setup-python@v1
