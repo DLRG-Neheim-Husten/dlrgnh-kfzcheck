@@ -13,4 +13,4 @@ for line in Lines:
 @app.route("/")
 def hello_world():
     kennzeichen = request.args.get('kennzeichen')
-    return kennzeichen is None and kennzeichen in s
+    return kennzeichen is not None and kennzeichen in s
