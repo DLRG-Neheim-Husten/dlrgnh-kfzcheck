@@ -2,7 +2,7 @@ from flask import Flask
 
 app = Flask(__name__)
 
-file1 = open('myfile.txt', 'r')
+file1 = open('kennzeichen.txt', 'r')
 Lines = file1.readlines()
 file1.close()
 s = set(())
