@@ -13,9 +13,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
 
     steps:
       - uses: actions/checkout@v2
+      
+      - uses: cclauss/Find-Python-syntax-errors-action@master
 
       - name: Set up Python version
         uses: actions/setup-python@v1
@@ -31,6 +34,8 @@ jobs:
         run: pip install -r requirements.txt
         
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+      
+      
       
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v2
