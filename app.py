@@ -53,6 +53,7 @@ class Kennzeichen(Resource):
         responses={
             200: 'Kennzeichen wurde gefunden. Body enthält die genau gespeicherten Kennzeichen.',
             204: 'Kennzeichen wurde nicht gefunden.',
+            403: 'If Origin is not set, but required',
         },
         headers= {
             'Origin': 'Origin set by browser to determine if CORS request is allowed.'
@@ -90,19 +91,24 @@ class Kennzeichen(Resource):
         resp.status = status
         return resp
 
-        
     def loadValidatedOriginForCorsRequest(self):
-        if not CORS_CHECK_ENABLED:
-            return None
 
         headers = request.headers
         
-        if 'Origin' not in headers:
-            raise AccessForbiddenException("Missing 'Origin' header in request")
+        if CORS_CHECK_ENABLED:
+            
+            if 'Origin' not in headers:
+                raise AccessForbiddenException("Missing 'Origin' header in request")
 
-        headerOrigin = request.headers['Origin']
-        if headerOrigin not in allowedCorsDomains:
-            raise AccessForbiddenException("'Origin' not in %s" % str(allowedCorsDomains))
+            headerOrigin = request.headers['Origin']
+
+            if headerOrigin not in allowedCorsDomains:
+                raise AccessForbiddenException("'Origin' not in %s" % str(allowedCorsDomains))
+        else:
+            if 'Origin' not in headers:
+                return None
+            else:
+                headerOrigin = request.headers['Origin']
 
         return headerOrigin
 
