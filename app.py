@@ -7,8 +7,6 @@ from flask_restx import Resource, Api
 import logging
 import re
 
-CORS_CHECK_ENABLED = False
-
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
@@ -33,26 +31,6 @@ for line in Lines:
 for key, value in app.data.items():
     logging.info(key + ": " + value)
 
-
-AZURE_PAGE = 'https://kfzcheck-dlrgnh.azurewebsites.net/'
-
-allowedCorsDomains = set(())
-allowedCorsDomains.add('https://neheim.dlrg.de')
-allowedCorsDomains.add(AZURE_PAGE)
-allowedCorsDomains.add('https://localhost')
-allowedCorsDomains.add('http://localhost')
-
-class AccessForbiddenException(Exception):
-    pass
-
-@app.errorhandler(AccessForbiddenException)
-def handle_exception(err):
-    response = {
-        'message': err.message
-    }
-
-    return jsonify(response), 403
-
 @api.route("/query/<string:kennzeichen>")
 @api.doc(params={'kennzeichen': '''
  Kennzeichen, nachdem gesucht wird. Case insensitive. Nicht alphanumerische
@@ -70,17 +48,9 @@ class Kennzeichen(Resource):
             'Origin': 'Origin set by browser to determine if CORS request is allowed.'
         })
     def get(self, kennzeichen):
-
-        try:
-            headerOrigin = self.loadValidatedOriginForCorsRequest()
-        except AccessForbiddenException as err:  
-            return Response(err, 403)
-
+       
         resp = self.createResponseFromData(kennzeichen)
-        if headerOrigin is None:
-            resp.headers['Access-Control-Allow-Origin'] = 'https://*'            
-        else:
-            resp.headers['Access-Control-Allow-Origin'] = headerOrigin
+        self.allowCorsRequest(resp)
         return resp
     
     def createResponseFromData(self, kennzeichen):
@@ -103,26 +73,12 @@ class Kennzeichen(Resource):
         resp.status = status
         return resp
 
-    def loadValidatedOriginForCorsRequest(self):
+    def allowCorsRequest(self, resp):
 
-        headers = request.headers
-        
-        if CORS_CHECK_ENABLED:
-            
-            if 'Origin' not in headers:
-                raise AccessForbiddenException("Missing 'Origin' header in request")
-
+        headers = request.headers    
+        if 'Origin' in headers:
             headerOrigin = request.headers['Origin']
-
-            if headerOrigin.empty() or headerOrigin not in allowedCorsDomains:
-                raise AccessForbiddenException("'Origin' not in %s" % str(allowedCorsDomains))
-        else:
-            if 'Origin' not in headers:
-                return None
-            else:
-                headerOrigin = request.headers['Origin']
-
-        return headerOrigin
-
+            resp.headers['Access-Control-Allow-Origin'] = headerOrigin
+        
 if __name__ == '__main__':
     app.run(debug=False)
