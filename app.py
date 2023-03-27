@@ -7,7 +7,7 @@ from flask_restx import Resource, Api
 import logging
 import re
 
-CORS_CHECK_ENABLED = True
+CORS_CHECK_ENABLED = False
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -34,13 +34,24 @@ for key, value in app.data.items():
     logging.info(key + ": " + value)
 
 
+AZURE_PAGE = 'https://kfzcheck-dlrgnh.azurewebsites.net/'
+
 allowedCorsDomains = set(())
 allowedCorsDomains.add('https://neheim.dlrg.de')
+allowedCorsDomains.add(AZURE_PAGE)
 allowedCorsDomains.add('https://localhost')
 allowedCorsDomains.add('http://localhost')
 
 class AccessForbiddenException(Exception):
     pass
+
+@app.errorhandler(AccessForbiddenException)
+def handle_exception(err):
+    response = {
+        'message': err.message
+    }
+
+    return jsonify(response), 403
 
 @api.route("/query/<string:kennzeichen>")
 @api.doc(params={'kennzeichen': '''
@@ -66,9 +77,10 @@ class Kennzeichen(Resource):
             return Response(err, 403)
 
         resp = self.createResponseFromData(kennzeichen)
-        if headerOrigin is not None:
+        if headerOrigin is None:
+            resp.headers['Access-Control-Allow-Origin'] = 'https://*'            
+        else:
             resp.headers['Access-Control-Allow-Origin'] = headerOrigin
-
         return resp
     
     def createResponseFromData(self, kennzeichen):
@@ -102,7 +114,7 @@ class Kennzeichen(Resource):
 
             headerOrigin = request.headers['Origin']
 
-            if headerOrigin not in allowedCorsDomains:
+            if headerOrigin.empty() or headerOrigin not in allowedCorsDomains:
                 raise AccessForbiddenException("'Origin' not in %s" % str(allowedCorsDomains))
         else:
             if 'Origin' not in headers:
